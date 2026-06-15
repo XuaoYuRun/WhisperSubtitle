@@ -659,7 +659,7 @@ class WhisperMinimalGUI(QMainWindow):
         zoom_frame_layout = QHBoxLayout(zoom_frame)
         zoom_frame_layout.setContentsMargins(12, 0, 12, 0)
         zoom_frame_layout.setSpacing(0)
-        btn = QPushButton("1512×882")
+        btn = QPushButton("50%")
         btn.setStyleSheet(
             "QPushButton {"
             "  background: transparent;"
@@ -676,7 +676,7 @@ class WhisperMinimalGUI(QMainWindow):
         zoom_frame_layout.addWidget(btn)
         zoom_bar.addWidget(zoom_frame)
 
-        for pct in [50, 75]:
+        for pct in [75]:
             zoom_frame = QFrame()
             zoom_frame.setMinimumHeight(34)
             zoom_frame.setMaximumHeight(34)
