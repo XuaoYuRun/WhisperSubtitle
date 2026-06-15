@@ -640,10 +640,42 @@ class WhisperMinimalGUI(QMainWindow):
         right_layout.addWidget(log_frame)
         right_layout.addSpacing(8)
 
-        # 右下角：缩放按钮（50% / 75%）
+        # 右下角：缩放按钮（1512×882 / 50% / 75%）
         zoom_bar = QHBoxLayout()
         zoom_bar.setSpacing(8)
         zoom_bar.addStretch()
+
+        # 固定分辨率按钮：1512×882
+        zoom_frame = QFrame()
+        zoom_frame.setMinimumHeight(34)
+        zoom_frame.setMaximumHeight(34)
+        zoom_frame.setStyleSheet(
+            "QFrame {"
+            "  background: #ffffff;"
+            "  border: 1px solid #e9ecef;"
+            "  border-radius: 10px;"
+            "}"
+        )
+        zoom_frame_layout = QHBoxLayout(zoom_frame)
+        zoom_frame_layout.setContentsMargins(12, 0, 12, 0)
+        zoom_frame_layout.setSpacing(0)
+        btn = QPushButton("1512×882")
+        btn.setStyleSheet(
+            "QPushButton {"
+            "  background: transparent;"
+            "  color: #adb5bd;"
+            "  border: none;"
+            "  padding: 0;"
+            "}"
+            "QPushButton:hover {"
+            "  color: #495057;"
+            "}"
+        )
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.clicked.connect(lambda: self._resize_window_fixed(1512, 882))
+        zoom_frame_layout.addWidget(btn)
+        zoom_bar.addWidget(zoom_frame)
+
         for pct in [50, 75]:
             zoom_frame = QFrame()
             zoom_frame.setMinimumHeight(34)
@@ -671,7 +703,7 @@ class WhisperMinimalGUI(QMainWindow):
                 "}"
             )
             btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda checked, p=pct: self._resize_window(p / 100))
+            btn.clicked.connect(lambda checked, p=pct: self._resize_window_fixed(int(QApplication.desktop().screenGeometry().width() * p / 100), int(QApplication.desktop().screenGeometry().width() * p / 100 / self._ratio)))
             zoom_frame_layout.addWidget(btn)
             zoom_bar.addWidget(zoom_frame)
         right_layout.addLayout(zoom_bar)
@@ -817,11 +849,9 @@ class WhisperMinimalGUI(QMainWindow):
         """固定布局下无需重置，左/中面板始终固定。"""
         pass
 
-    def _resize_window(self, pct):
-        """按屏幕百分比调整窗口大小并居中，保持宽高比例"""
+    def _resize_window_fixed(self, w, h):
+        """按固定像素调整窗口大小并居中"""
         screen = QApplication.desktop().screenGeometry()
-        w = int(screen.width() * pct)
-        h = int(w / self._ratio)
         x = (screen.width() - w) // 2
         y = (screen.height() - h) // 2
         self.setGeometry(x, y, w, h)
