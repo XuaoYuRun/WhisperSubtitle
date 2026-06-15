@@ -257,9 +257,8 @@ class WhisperMinimalGUI(QMainWindow):
 
         # ========== 主内容区：可调整宽度的 QSplitter ==========
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setHandleWidth(2)
-        self.splitter.setOpaqueResize(False)
-        self.splitter.setStyleSheet("")
+        self.splitter.setHandleWidth(1)
+        self.splitter.setStyleSheet("QSplitter::handle { background: #e9ecef; }")
         outer_layout.addWidget(self.splitter, 1)
 
         # --- 左侧设置面板 ---
@@ -407,7 +406,6 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
         left.setMinimumWidth(330)
-        left.setMaximumWidth(330)
         self.splitter.addWidget(left)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
@@ -547,6 +545,7 @@ class WhisperMinimalGUI(QMainWindow):
         self.center_stack.addWidget(perf_page)
 
         center_layout.addWidget(self.center_stack)
+        center.setMinimumWidth(330)
         self.splitter.addWidget(center)
 
         # 性能监控定时器
