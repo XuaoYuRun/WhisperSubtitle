@@ -407,20 +407,19 @@ class WhisperMinimalGUI(QMainWindow):
         reset_frame_layout.addWidget(self.reset_layout_btn)
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
-        # 左面板固定 330px
-        left.setFixedWidth(440)
-        main_layout.addWidget(left)
+        # 左面板占 3/10
+        left.setMinimumWidth(200)
+        main_layout.addWidget(left, 3)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
         center = QFrame()
         center.setStyleSheet("background: #ffffff;")
-        center.setMinimumWidth(500)
-        center.setMaximumWidth(500)
+        center.setMinimumWidth(200)
         center_layout = QVBoxLayout(center)
         center_layout.setContentsMargins(40, 28, 40, 24)
         center_layout.setSpacing(0)
         center_layout.setAlignment(Qt.AlignTop)
-        main_layout.addWidget(center)
+        main_layout.addWidget(center, 3)
 
         # 标题行 + 页面选择下拉
         center_header = QHBoxLayout()
@@ -676,7 +675,7 @@ class WhisperMinimalGUI(QMainWindow):
             zoom_bar.addWidget(zoom_frame)
         right_layout.addLayout(zoom_bar)
         right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        main_layout.addWidget(right)
+        main_layout.addWidget(right, 4)
 
         self.setStyleSheet("""
             QMainWindow { background: #ffffff; border: none; }
