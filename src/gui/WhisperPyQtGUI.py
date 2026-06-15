@@ -640,41 +640,6 @@ class WhisperMinimalGUI(QMainWindow):
         right_layout.addWidget(log_frame)
         right_layout.addSpacing(8)
 
-        # 右下角：缩放按钮（圆角框包裹，与重置布局同风格）
-        zoom_bar = QHBoxLayout()
-        zoom_bar.setSpacing(8)
-        zoom_bar.addStretch()
-        for pct in [25, 50, 75]:
-            zoom_frame = QFrame()
-            zoom_frame.setMinimumHeight(34)
-            zoom_frame.setMaximumHeight(34)
-            zoom_frame.setStyleSheet(
-                "QFrame {"
-                "  background: #ffffff;"
-                "  border: 1px solid #e9ecef;"
-                "  border-radius: 10px;"
-                "}"
-            )
-            zoom_frame_layout = QHBoxLayout(zoom_frame)
-            zoom_frame_layout.setContentsMargins(12, 0, 12, 0)
-            zoom_frame_layout.setSpacing(0)
-            btn = QPushButton(f"{pct}%")
-            btn.setStyleSheet(
-                "QPushButton {"
-                "  background: transparent;"
-                "  color: #adb5bd;"
-                "  border: none;"
-                "  padding: 0;"
-                "}"
-                "QPushButton:hover {"
-                "  color: #495057;"
-                "}"
-            )
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda checked, p=pct: self._resize_window(p / 100))
-            zoom_frame_layout.addWidget(btn)
-            zoom_bar.addWidget(zoom_frame)
-        right_layout.addLayout(zoom_bar)
         right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         main_layout.addWidget(right)
 
