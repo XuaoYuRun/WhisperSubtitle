@@ -238,9 +238,25 @@ class WhisperMinimalGUI(QMainWindow):
         """窗口显示后的初始化"""
         super().showEvent(event)
 
+    def _on_splitter_moved(self, pos, index):
+        """用户拖动分割线时，实时锁定左面板为 330px，防止中间面板被推到右边。"""
+        sizes = self.splitter.sizes()
+        left, center, right = sizes[0], sizes[1], sizes[2]
+        if left > 330:
+            # 左面板被拉宽，恢复为 330px，多余空间从右面板借
+            delta = left - 330
+            left = 330
+            right = max(100, right - delta)
+            self.splitter.setSizes([left, center, right])
+
     def resizeEvent(self, event):
-        """窗口 resize 时正常处理，不手动干预 QSplitter 尺寸。stretchFactor(0,0,1) 已确保左/中间固定。"""
+        """窗口 resize 时保持左面板 330px、中间面板 330px，右面板弹性。"""
         super().resizeEvent(event)
+        total = self.width()
+        left = 330
+        center = 330
+        right = max(100, total - left - center - 2)
+        self.splitter.setSizes([left, center, right])
 
     def closeEvent(self, event):
         """程序关闭前清理"""
@@ -405,7 +421,9 @@ class WhisperMinimalGUI(QMainWindow):
         reset_frame_layout.addWidget(self.reset_layout_btn)
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
-        left.setMinimumWidth(330)
+        # 设置左面板最大宽度 330px，允许压缩但不能拉宽，防止中间面板被推到右边
+        left.setMinimumWidth(100)
+        left.setMaximumWidth(330)
         self.splitter.addWidget(left)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
@@ -676,11 +694,13 @@ class WhisperMinimalGUI(QMainWindow):
         # 设置 QSplitter 的 stretch factor：
         # 左侧和中间面板固定宽度（不随窗口 resize 伸缩），只有右侧面板弹性变化。
         # 这样中间面板位置始终固定在 330px 处，resize 时不会左右跳动。
-        self.splitter.setStretchFactor(0, 0)
-        self.splitter.setStretchFactor(1, 0)
-        self.splitter.setStretchFactor(2, 1)
+        # 移除 stretchFactor，改为在 resizeEvent 中手动处理布局，避免用户拖动分割线时产生副作用
+        # self.splitter.setStretchFactor(0, 0)
+        # self.splitter.setStretchFactor(1, 0)
+        # self.splitter.setStretchFactor(2, 1)
         self.splitter.setSizes([330, 330, 440])
         self.splitter.setChildrenCollapsible(False)
+        self.splitter.splitterMoved.connect(self._on_splitter_moved)
 
         self.setStyleSheet("""
             QMainWindow { background: #ffffff; border: none; }
