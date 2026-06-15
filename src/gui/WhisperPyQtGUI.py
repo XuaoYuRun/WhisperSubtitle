@@ -255,11 +255,13 @@ class WhisperMinimalGUI(QMainWindow):
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(0)
 
-        # ========== 主内容区：可调整宽度的 QSplitter ==========
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setHandleWidth(0)
-        self.splitter.setStyleSheet("")
-        outer_layout.addWidget(self.splitter, 1)
+        # ========== 主内容区：三列固定布局（彻底消除 QSplitter 拖动导致的 UI 偏移）==========
+        main_container = QWidget()
+        main_container.setStyleSheet("background: transparent;")
+        self.main_layout = QHBoxLayout(main_container)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+        outer_layout.addWidget(main_container, 1)
 
         # --- 左侧设置面板 ---
         left = QFrame()
@@ -406,15 +408,14 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
         # 设置左面板最大宽度 330px，允许压缩但不能拉宽，防止中间面板被推到右边
-        left.setMinimumWidth(100)
-        left.setMaximumWidth(330)
-        self.splitter.addWidget(left)
+        left.setFixedWidth(330)
+        self.main_layout.addWidget(left)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
         center = QFrame()
         center.setStyleSheet("background: #ffffff;")
-        center.setMinimumWidth(100)
-        center_layout = QVBoxLayout(center)
+        center.setFixedWidth(330)
+        self.main_layout.addWidget(center)
         center_layout.setContentsMargins(40, 28, 40, 24)
         center_layout.setSpacing(0)
         center_layout.setAlignment(Qt.AlignTop)
@@ -548,7 +549,7 @@ class WhisperMinimalGUI(QMainWindow):
 
         center_layout.addWidget(self.center_stack)
         center.setMinimumWidth(330)
-        self.splitter.addWidget(center)
+        self.main_layout.addWidget(center)
 
         # 性能监控定时器
         self._perf_timer = QTimer(self)
@@ -674,15 +675,8 @@ class WhisperMinimalGUI(QMainWindow):
             zoom_frame_layout.addWidget(btn)
             zoom_bar.addWidget(zoom_frame)
         right_layout.addLayout(zoom_bar)
-        self.splitter.addWidget(right)
-        # 设置 QSplitter 的 stretch factor：
-        # 左侧和中间面板固定宽度（不随窗口 resize 伸缩），只有右侧面板弹性变化。
-        # 这样中间面板位置始终固定在 330px 处，resize 时不会左右跳动。
-        self.splitter.setStretchFactor(0, 0)
-        self.splitter.setStretchFactor(1, 0)
-        self.splitter.setStretchFactor(2, 1)
-        self.splitter.setSizes([330, 330, 440])
-        self.splitter.setChildrenCollapsible(False)
+        right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.main_layout.addWidget(right)
 
         self.setStyleSheet("""
             QMainWindow { background: #ffffff; border: none; }
@@ -819,7 +813,8 @@ class WhisperMinimalGUI(QMainWindow):
         self.log_edit.clear()
 
     def _reset_layout(self):
-        self.splitter.setSizes([330, 330, 440])
+        """固定布局下，左/中间面板始终 330px，无需手动重置。"""
+        pass
 
     def _resize_window(self, pct):
         """按屏幕百分比调整窗口大小并居中，保持宽高比例"""
