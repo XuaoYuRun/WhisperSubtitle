@@ -11,7 +11,7 @@ from collections import deque
 from pathlib import Path
 
 try:
-    from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt, QTimer, QAbstractNativeEventFilter
+    from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt, QTimer
     from PyQt5.QtGui import QColor, QFont, QTextCursor, QTextCharFormat, QPixmap, QIcon
     from PyQt5.QtWidgets import (
         QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -152,59 +152,6 @@ class PerfChart(QWidget):
         painter.end()
 
 
-class RatioLockFilter(QAbstractNativeEventFilter):
-    """全局 Native 事件过滤器：在 Qt 层面拦截 Windows WM_SIZING，锁定窗口宽高比例"""
-    def __init__(self, ratio):
-        super().__init__()
-        self.ratio = ratio
-        self.hwnd = None
-
-    def nativeEventFilter(self, eventType, message):
-        if eventType != b"windows_generic_MSG" or self.hwnd is None:
-            return False, 0
-        try:
-            import ctypes
-            from ctypes import wintypes
-            class RECT(ctypes.Structure):
-                _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG),
-                            ("right", wintypes.LONG), ("bottom", wintypes.LONG)]
-            # PyQt5 5.15+ message 是 PyCapsule，必须优先用 PyCapsule_GetPointer 取内部指针
-            try:
-                from ctypes import pythonapi, py_object
-                pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-                pythonapi.PyCapsule_GetPointer.argtypes = [py_object, ctypes.c_char_p]
-                msg_ptr = pythonapi.PyCapsule_GetPointer(message, None)
-            except (TypeError, ValueError):
-                msg_ptr = int(message)
-            class MSG(ctypes.Structure):
-                _fields_ = [("hwnd", wintypes.HWND), ("message", wintypes.UINT),
-                            ("wParam", wintypes.WPARAM), ("lParam", wintypes.LPARAM),
-                            ("time", wintypes.DWORD), ("pt", wintypes.POINT)]
-            msg = ctypes.cast(msg_ptr, ctypes.POINTER(MSG)).contents
-            if msg.hwnd != self.hwnd or msg.message != 0x0214:  # 不是我们的窗口或不是 WM_SIZING
-                return False, 0
-            rect = ctypes.cast(msg.lParam, ctypes.POINTER(RECT)).contents
-            w = rect.right - rect.left
-            h = rect.bottom - rect.top
-            if h <= 0:
-                return True, 1
-            if w / h > self.ratio:
-                new_w = int(h * self.ratio)
-                if msg.wParam in (1, 4, 7):  # 左边在动
-                    rect.left = rect.right - new_w
-                else:
-                    rect.right = rect.left + new_w
-            else:
-                new_h = int(w / self.ratio)
-                if msg.wParam in (3, 4, 5):  # 上边在动
-                    rect.top = rect.bottom - new_h
-                else:
-                    rect.bottom = rect.top + new_h
-            return True, 1
-        except Exception:
-            return False, 0
-
-
 class WhisperMinimalGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -288,32 +235,15 @@ class WhisperMinimalGUI(QMainWindow):
             pass
 
     def showEvent(self, event):
-        """窗口显示后安装 Qt 全局 Native 事件过滤器，拦截 WM_SIZING 锁定比例"""
+        """窗口显示后的初始化"""
         super().showEvent(event)
-        if not hasattr(self, '_ratio_filter'):
-            self._ratio_filter = RatioLockFilter(self._ratio)
-            self._ratio_filter.hwnd = int(self.winId())
-            QApplication.instance().installNativeEventFilter(self._ratio_filter)
 
     def resizeEvent(self, event):
-        """窗口 resize 后修正比例，保持宽高锁定。先修正尺寸再触发布局，避免 QSplitter 两次重算。"""
-        if getattr(self, '_resizing', False):
-            super().resizeEvent(event)
-            return
-        w = self.width()
-        h = self.height()
-        target_h = int(w / self._ratio)
-        if abs(h - target_h) > 1:
-            self._resizing = True
-            self.resize(w, target_h)
-            self._resizing = False
-            return
+        """窗口 resize 时正常处理，不手动干预 QSplitter 尺寸。stretchFactor(0,0,1) 已确保左/中间固定。"""
         super().resizeEvent(event)
 
     def closeEvent(self, event):
-        """程序关闭前移除 Native 事件过滤器"""
-        if hasattr(self, '_ratio_filter'):
-            QApplication.instance().removeNativeEventFilter(self._ratio_filter)
+        """程序关闭前清理"""
         super().closeEvent(event)
 
     # ==================== UI 构建 ====================
@@ -327,8 +257,9 @@ class WhisperMinimalGUI(QMainWindow):
 
         # ========== 主内容区：可调整宽度的 QSplitter ==========
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setHandleWidth(1)
-        self.splitter.setStyleSheet("QSplitter::handle { background: #e9ecef; }")
+        self.splitter.setHandleWidth(2)
+        self.splitter.setOpaqueResize(False)
+        self.splitter.setStyleSheet("")
         outer_layout.addWidget(self.splitter, 1)
 
         # --- 左侧设置面板 ---
@@ -475,6 +406,8 @@ class WhisperMinimalGUI(QMainWindow):
         reset_frame_layout.addWidget(self.reset_layout_btn)
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
+        left.setMinimumWidth(330)
+        left.setMaximumWidth(330)
         self.splitter.addWidget(left)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
@@ -562,8 +495,6 @@ class WhisperMinimalGUI(QMainWindow):
             "QListWidget {"
             "  background: #f8f9fa;"
             "  border: 1px solid #e9ecef;"
-            "  border-radius: 12px;"
-            "  padding: 8px;"
             "  outline: none;"
             "}"
             "QListWidget::item {"
@@ -743,9 +674,12 @@ class WhisperMinimalGUI(QMainWindow):
             zoom_bar.addWidget(zoom_frame)
         right_layout.addLayout(zoom_bar)
         self.splitter.addWidget(right)
-        self.splitter.setStretchFactor(0, 3)
-        self.splitter.setStretchFactor(1, 3)
-        self.splitter.setStretchFactor(2, 4)
+        # 设置 QSplitter 的 stretch factor：
+        # 左侧和中间面板固定宽度（不随窗口 resize 伸缩），只有右侧面板弹性变化。
+        # 这样中间面板位置始终固定在 330px 处，resize 时不会左右跳动。
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 0)
+        self.splitter.setStretchFactor(2, 1)
         self.splitter.setSizes([330, 330, 440])
         self.splitter.setChildrenCollapsible(False)
 
