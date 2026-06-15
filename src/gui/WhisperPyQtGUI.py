@@ -296,19 +296,19 @@ class WhisperMinimalGUI(QMainWindow):
             QApplication.instance().installNativeEventFilter(self._ratio_filter)
 
     def resizeEvent(self, event):
-        """备用：如果 Native 过滤器拦截失败，在 Qt 层面后处理修正比例（会有轻微闪影）"""
-        super().resizeEvent(event)
-        if getattr(self, '_resizing', False) or getattr(self, '_ratio_filter', None):
+        """窗口 resize 后修正比例，保持宽高锁定。先修正尺寸再触发布局，避免 QSplitter 两次重算。"""
+        if getattr(self, '_resizing', False):
+            super().resizeEvent(event)
             return
         w = self.width()
         h = self.height()
         target_h = int(w / self._ratio)
         if abs(h - target_h) > 1:
             self._resizing = True
-            self.setUpdatesEnabled(False)
             self.resize(w, target_h)
-            self.setUpdatesEnabled(True)
             self._resizing = False
+            return
+        super().resizeEvent(event)
 
     def closeEvent(self, event):
         """程序关闭前移除 Native 事件过滤器"""
