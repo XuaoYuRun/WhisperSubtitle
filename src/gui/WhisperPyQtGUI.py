@@ -408,14 +408,14 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
         # 左面板固定 330px
-        left.setFixedWidth(330)
+        left.setFixedWidth(440)
         main_layout.addWidget(left)
 
         # --- 中间栏：双页切换（队列 / 性能监控）---
         center = QFrame()
         center.setStyleSheet("background: #ffffff;")
-        center.setMinimumWidth(400)
-        center.setMaximumWidth(400)
+        center.setMinimumWidth(500)
+        center.setMaximumWidth(500)
         center_layout = QVBoxLayout(center)
         center_layout.setContentsMargins(40, 28, 40, 24)
         center_layout.setSpacing(0)
