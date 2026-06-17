@@ -384,36 +384,8 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(self.status_lbl)
         left_layout.addSpacing(24)
 
-        # 左下角：重置布局按钮（圆角框包裹）
-        reset_frame = QFrame()
-        reset_frame.setStyleSheet(
-            "QFrame {"
-            "  background: #ffffff;"
-            "  border: 1px solid #e9ecef;"
-            "  border-radius: 10px;"
-            "}"
-        )
-        reset_frame_layout = QHBoxLayout(reset_frame)
-        reset_frame_layout.setContentsMargins(12, 8, 12, 8)
-        reset_frame_layout.setSpacing(0)
-        self.reset_layout_btn = QPushButton("重置布局")
-        self.reset_layout_btn.setStyleSheet(
-            "QPushButton {"
-            "  background: transparent;"
-            "  color: #adb5bd;"
-            "  border: none;"
-            "  padding: 0;"
-            "}"
-            "QPushButton:hover {"
-            "  color: #495057;"
-            "}"
-        )
-        self.reset_layout_btn.setCursor(Qt.PointingHandCursor)
-        self.reset_layout_btn.clicked.connect(self._reset_layout)
-        reset_frame_layout.addWidget(self.reset_layout_btn)
-        left_layout.addWidget(reset_frame, alignment=Qt.AlignLeft)
         left_layout.addStretch()
-        # 左面板固定 330px
+        # 左面板固定 440px
         left.setFixedWidth(440)
         main_layout.addWidget(left)
 
@@ -861,10 +833,6 @@ class WhisperMinimalGUI(QMainWindow):
 
     def _clear_log(self):
         self.log_edit.clear()
-
-    def _reset_layout(self):
-        """固定布局下无需重置，左/中面板始终固定。"""
-        pass
 
     def _resize_window_fixed(self, w, h):
         """按固定像素调整窗口大小并居中"""
