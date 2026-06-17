@@ -138,12 +138,16 @@ def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path
     print(f"🎬 正在处理: {video_path.name}")
     print(f"{'='*60}")
 
-    # 决定输出目录：强制指定 或 自动在视频同目录创建 Text 文件夹
+    # 决定输出目录：用户指定 或 视频同目录的 Text 文件夹
     if forced_output_dir is not None:
         output_dir = forced_output_dir
     else:
         output_dir = video_path.parent / "Text"
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 始终创建视频同目录的 Text 文件夹（作为备份存档）
+    text_dir = video_path.parent / "Text"
+    text_dir.mkdir(parents=True, exist_ok=True)
 
     # 转录参数 —— 重点修复重复问题
     segments, info = model.transcribe(
@@ -203,7 +207,15 @@ def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path
         for line in lines:
             f.write(line + "\n")
 
-    print(f"✅ 完成输出: {output_path} ({len(lines)} 句)")
+    # 如果用户指定了输出目录，额外备份一份到视频同目录的 Text 文件夹
+    if output_dir != text_dir:
+        backup_path = text_dir / f"{base_name}.txt"
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            for line in lines:
+                f.write(line + "\n")
+        print(f"✅ 完成输出: {output_path} ({len(lines)} 句) + 备份: {backup_path}")
+    else:
+        print(f"✅ 完成输出: {output_path} ({len(lines)} 句)")
     return output_path
 
 
