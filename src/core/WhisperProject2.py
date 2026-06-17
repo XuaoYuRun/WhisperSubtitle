@@ -132,7 +132,25 @@ def clean_repetition(lines):
     return cleaned
 
 
-def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path = None) -> Path:
+def txt_to_md(txt_path: Path, md_path: Path, video_path: Path):
+    """将纯文本 TXT 转换为 Markdown 格式"""
+    with open(txt_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    md_content = (
+        f"# {video_path.stem}\n\n"
+        f"> 来源: {video_path.name}\n\n"
+        f"---\n\n"
+        f"{content}\n\n"
+        f"---\n\n"
+        f"*由 Whisper 语音转录自动生成*"
+    )
+    
+    with open(md_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+
+
+def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path = None, desktop: bool = False) -> Path:
     """处理单个视频文件"""
     print(f"\n{'='*60}")
     print(f"🎬 正在处理: {video_path.name}")
@@ -216,6 +234,24 @@ def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path
         print(f"✅ 完成输出: {output_path} ({len(lines)} 句) + 备份: {backup_path}")
     else:
         print(f"✅ 完成输出: {output_path} ({len(lines)} 句)")
+    
+    # 如果启用了桌面保存，保存到桌面并转 Markdown
+    if desktop:
+        desktop_text_dir = Path("C:/Users/Administrator/Desktop/Whisper语音列表/Text")
+        desktop_md_dir = Path("C:/Users/Administrator/Desktop/Whisper语音列表/Markdown")
+        desktop_text_dir.mkdir(parents=True, exist_ok=True)
+        desktop_md_dir.mkdir(parents=True, exist_ok=True)
+        
+        desktop_txt_path = desktop_text_dir / f"{base_name}.txt"
+        desktop_md_path = desktop_md_dir / f"{base_name}.md"
+        
+        with open(desktop_txt_path, 'w', encoding='utf-8') as f:
+            for line in lines:
+                f.write(line + "\n")
+        
+        txt_to_md(desktop_txt_path, desktop_md_path, video_path)
+        print(f"📁 桌面保存: {desktop_txt_path} + {desktop_md_path}")
+    
     return output_path
 
 
@@ -243,6 +279,10 @@ def main():
     parser.add_argument(
         '-o', '--output', default='.',
         help='强制指定输出文件夹路径 (默认: 在视频所在目录自动创建 Text 文件夹)'
+    )
+    parser.add_argument(
+        '--desktop', action='store_true',
+        help='额外保存到桌面 Whisper语音列表 并转 Markdown'
     )
     args = parser.parse_args()
 
@@ -309,7 +349,7 @@ def main():
     success_count = 0
     for video_file in video_files:
         try:
-            process_video(video_file, model, forced_output_dir)
+            process_video(video_file, model, forced_output_dir, args.desktop)
             success_count += 1
         except Exception as e:
             print(f"\n❌ 处理 {video_file.name} 时出错: {e}")

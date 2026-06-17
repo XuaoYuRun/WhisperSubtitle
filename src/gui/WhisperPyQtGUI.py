@@ -325,7 +325,7 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(sec2_label)
         left_layout.addSpacing(8)
         self.out_edit = QLineEdit()
-        self.out_edit.setPlaceholderText("留空则自动创建 Text / Second 文件夹")
+        self.out_edit.setPlaceholderText("留空则自动创建 Text 文件夹")
         self.out_edit.setStyleSheet(self._input_style())
         left_layout.addWidget(self.out_edit)
         left_layout.addSpacing(12)
@@ -341,7 +341,7 @@ class WhisperMinimalGUI(QMainWindow):
         sec3_label.setStyleSheet("color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;")
         left_layout.addWidget(sec3_label)
         left_layout.addSpacing(8)
-        self.ver_desc = QLabel("自动清理视频结尾的重复幻觉，输出到 Second 文件夹")
+        self.ver_desc = QLabel("自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
         self.ver_desc.setStyleSheet("color: #adb5bd; padding-left: 2px;")
         self.ver_desc.setWordWrap(True)
         ver_row = QHBoxLayout()
@@ -360,6 +360,13 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addWidget(self.ver_desc)
         left_layout.addSpacing(36)
         self.v2_radio.setChecked(True)
+
+        # 桌面保存选项
+        self.desktop_cb = QCheckBox("自动保存到桌面并转 Markdown")
+        self.desktop_cb.setStyleSheet(self._checkbox_style())
+        self.desktop_cb.setCursor(Qt.PointingHandCursor)
+        left_layout.addWidget(self.desktop_cb)
+        left_layout.addSpacing(36)
 
         # 控制按钮
         self.start_btn = QPushButton("开始转录")
@@ -766,6 +773,31 @@ class WhisperMinimalGUI(QMainWindow):
             "QRadioButton:checked { color: #1a1a1a; font-weight: 500; }"
         )
 
+    def _checkbox_style(self):
+        return (
+            "QCheckBox {"
+            "  color: #495057;"
+            "  spacing: 8px;"
+            "  padding: 6px 0;"
+            "}"
+            "QCheckBox::indicator {"
+            "  width: 16px;"
+            "  height: 16px;"
+            "  border-radius: 4px;"
+            "  border: 1px solid #e9ecef;"
+            "  background: #ffffff;"
+            "}"
+            "QCheckBox::indicator:checked {"
+            "  background: #1a1a1a;"
+            "  border-color: #1a1a1a;"
+            "}"
+            "QCheckBox::indicator:checked::after {"
+            "  content: '\\2713';"
+            "  color: #ffffff;"
+            "  font-size: 10px;"
+            "}"
+        )
+
     # ==================== 事件处理 ====================
     def _on_v1_toggled(self, checked):
         if checked:
@@ -775,7 +807,7 @@ class WhisperMinimalGUI(QMainWindow):
     def _on_v2_toggled(self, checked):
         if checked:
             self.version = "v2"
-            self.ver_desc.setText("自动清理视频结尾的重复幻觉，输出到 Second 文件夹")
+            self.ver_desc.setText("自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
 
     def _browse_input(self):
         import tkinter as tk
@@ -1010,6 +1042,8 @@ class WhisperMinimalGUI(QMainWindow):
         cmd = [str(VENV_PYTHON), str(script), input_p]
         if output_p:
             cmd.extend(["-o", output_p])
+        if self.desktop_cb.isChecked():
+            cmd.append("--desktop")
         self._append_log("=" * 50, "#2980b9")
         self._append_log(f"▶ 启动转录 | 版本: {self.version}", "#2980b9")
         self._append_log(f"{' '.join(cmd)}", "#2980b9")
