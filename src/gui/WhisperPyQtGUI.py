@@ -17,7 +17,7 @@ try:
         QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
         QLabel, QPushButton, QLineEdit, QPlainTextEdit, QFrame,
         QFileDialog, QMessageBox, QSizePolicy, QRadioButton, QSplitter,
-        QListWidget, QStackedWidget, QMenu
+        QListWidget, QStackedWidget, QMenu, QCheckBox
     )
 except ImportError:
     import tkinter
