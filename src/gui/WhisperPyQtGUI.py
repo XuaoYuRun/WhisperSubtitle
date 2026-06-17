@@ -849,13 +849,7 @@ class WhisperMinimalGUI(QMainWindow):
         root = tk.Tk()
         root.withdraw()
         root.attributes('-topmost', True)
-        path = filedialog.askopenfilename(
-            title="选择视频或音频文件",
-            filetypes=[
-                ("视频/音频文件", "*.mp4;*.mkv;*.avi;*.mov;*.wmv;*.flv;*.webm;*.m4v;*.mpeg;*.mpg;*.mp3;*.wav;*.m4a;*.aac;*.ogg"),
-                ("所有文件", "*.*")
-            ]
-        )
+        path = filedialog.askdirectory(title="选择包含视频/音频的文件夹")
         root.destroy()
         if path:
             self.file_edit.setText(path)
