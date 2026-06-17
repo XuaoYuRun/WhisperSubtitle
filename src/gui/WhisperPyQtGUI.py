@@ -357,48 +357,34 @@ class WhisperMinimalGUI(QMainWindow):
         left_layout.addLayout(out_btn_row)
         left_layout.addSpacing(28)
 
-        # 语言选择
-        sec_lang_label = QLabel("语言")
-        sec_lang_label.setStyleSheet("color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;")
-        left_layout.addWidget(sec_lang_label)
-        left_layout.addSpacing(8)
-        lang_row = QHBoxLayout()
-        lang_row.setSpacing(16)
-        self.cn_radio = QRadioButton("中文")
-        self.cn_radio.setStyleSheet(self._radio_style())
-        self.cn_radio.setChecked(True)
-        self.en_radio = QRadioButton("英文")
-        self.en_radio.setStyleSheet(self._radio_style())
-        lang_row.addWidget(self.cn_radio)
-        lang_row.addWidget(self.en_radio)
-        lang_row.addStretch()
-        left_layout.addLayout(lang_row)
-        left_layout.addSpacing(28)
-
-        # 版本
-        sec3_label = QLabel("处理版本")
+        # 处理模式（语言+版本合并为三个互斥选项）
+        sec3_label = QLabel("处理模式")
         sec3_label.setStyleSheet("color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;")
         left_layout.addWidget(sec3_label)
         left_layout.addSpacing(8)
-        self.ver_desc = QLabel("自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
-        self.ver_desc.setStyleSheet("color: #adb5bd; padding-left: 2px;")
-        self.ver_desc.setWordWrap(True)
-        ver_row = QHBoxLayout()
-        ver_row.setSpacing(16)
-        self.v1_radio = QRadioButton("标准版")
-        self.v1_radio.setStyleSheet(self._radio_style())
-        self.v1_radio.toggled.connect(self._on_v1_toggled)
-        self.v2_radio = QRadioButton("防幻觉")
-        self.v2_radio.setStyleSheet(self._radio_style())
-        self.v2_radio.toggled.connect(self._on_v2_toggled)
-        ver_row.addWidget(self.v1_radio)
-        ver_row.addWidget(self.v2_radio)
-        ver_row.addStretch()
-        left_layout.addLayout(ver_row)
-        left_layout.addSpacing(4)
-        left_layout.addWidget(self.ver_desc)
+        mode_row = QHBoxLayout()
+        mode_row.setSpacing(16)
+        self.mode_cn = QRadioButton("中文转录")
+        self.mode_cn.setStyleSheet(self._radio_style())
+        self.mode_cn.setChecked(True)
+        self.mode_en_v1 = QRadioButton("英文标准版")
+        self.mode_en_v1.setStyleSheet(self._radio_style())
+        self.mode_en_v2 = QRadioButton("英文防幻觉")
+        self.mode_en_v2.setStyleSheet(self._radio_style())
+        self.mode_cn.toggled.connect(self._on_mode_changed)
+        self.mode_en_v1.toggled.connect(self._on_mode_changed)
+        self.mode_en_v2.toggled.connect(self._on_mode_changed)
+        mode_row.addWidget(self.mode_cn)
+        mode_row.addWidget(self.mode_en_v1)
+        mode_row.addWidget(self.mode_en_v2)
+        mode_row.addStretch()
+        left_layout.addLayout(mode_row)
+        left_layout.addSpacing(8)
+        self.mode_desc = QLabel("中文语音转录，输出到 Text 文件夹")
+        self.mode_desc.setStyleSheet("color: #adb5bd; padding-left: 2px;")
+        self.mode_desc.setWordWrap(True)
+        left_layout.addWidget(self.mode_desc)
         left_layout.addSpacing(36)
-        self.v2_radio.setChecked(True)
 
         # 桌面保存选项
         self.desktop_cb = QCheckBox("自动保存到桌面并转 Markdown")
@@ -838,15 +824,13 @@ class WhisperMinimalGUI(QMainWindow):
         )
 
     # ==================== 事件处理 ====================
-    def _on_v1_toggled(self, checked):
-        if checked:
-            self.version = "v1"
-            self.ver_desc.setText("输出到 Text 文件夹")
-
-    def _on_v2_toggled(self, checked):
-        if checked:
-            self.version = "v2"
-            self.ver_desc.setText("自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
+    def _on_mode_changed(self):
+        if self.mode_cn.isChecked():
+            self.mode_desc.setText("中文语音转录，输出到 Text 文件夹")
+        elif self.mode_en_v1.isChecked():
+            self.mode_desc.setText("英文标准版，输出到 Text 文件夹")
+        elif self.mode_en_v2.isChecked():
+            self.mode_desc.setText("英文防幻觉版，自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
 
     def _browse_input(self):
         import tkinter as tk
@@ -1076,11 +1060,17 @@ class WhisperMinimalGUI(QMainWindow):
         if not Path(input_p).exists():
             QMessageBox.critical(self, "错误", f"路径不存在:\n{input_p}")
             return
-        # 根据语言和版本选择脚本
-        if self.cn_radio.isChecked():
+        # 根据处理模式选择脚本
+        if self.mode_cn.isChecked():
             script = SCRIPT_CN
+            mode_str = "中文转录"
+        elif self.mode_en_v1.isChecked():
+            script = SCRIPT_V1
+            mode_str = "英文标准版"
         else:
-            script = SCRIPT_V1 if self.version == "v1" else SCRIPT_V2
+            script = SCRIPT_V2
+            mode_str = "英文防幻觉版"
+
         output_p = self.out_edit.text().strip()
         cmd = [str(VENV_PYTHON), str(script), input_p]
         if output_p:
@@ -1088,7 +1078,7 @@ class WhisperMinimalGUI(QMainWindow):
         if self.desktop_cb.isChecked():
             cmd.append("--desktop")
         self._append_log("=" * 50, "#2980b9")
-        self._append_log(f"▶ 启动转录 | 语言: {'中文' if self.cn_radio.isChecked() else '英文'} | 版本: {self.version}", "#2980b9")
+        self._append_log(f"▶ 启动转录 | {mode_str}", "#2980b9")
         self._append_log(f"{' '.join(cmd)}", "#2980b9")
         self._append_log("=" * 50, "#2980b9")
         self.is_running = True
