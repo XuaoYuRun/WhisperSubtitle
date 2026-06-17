@@ -138,11 +138,11 @@ def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path
     print(f"🎬 正在处理: {video_path.name}")
     print(f"{'='*60}")
 
-    # 决定输出目录：强制指定 或 自动在视频同目录创建 Second 文件夹
+    # 决定输出目录：强制指定 或 自动在视频同目录创建 Text 文件夹
     if forced_output_dir is not None:
         output_dir = forced_output_dir
     else:
-        output_dir = video_path.parent / "Second"
+        output_dir = video_path.parent / "Text"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # 转录参数 —— 重点修复重复问题
@@ -213,16 +213,16 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用示例:
-  单文件 (自动创建 Second 目录):
+  单文件 (自动创建 Text 目录):
       python faster_whisper_en_aggressive.py "D:\\视频\\课程1.mp4"
-      → 输出到 D:\\视频\\Second\\课程1.txt
+      → 输出到 D:\\视频\\Text\\课程1.txt
 
-  文件夹 (递归扫描子文件夹中的视频，自动创建 Second 目录):
+  文件夹 (递归扫描子文件夹中的视频，自动创建 Text 目录):
       python faster_whisper_en_aggressive.py "D:\\视频\\课程文件夹"
-      → 输出到 D:\\视频\\课程文件夹\\子文件夹A\\Second\\课程x.txt
-      → 输出到 D:\\视频\\课程文件夹\\子文件夹B\\Second\\课程y.txt
+      → 输出到 D:\\视频\\课程文件夹\\子文件夹A\\Text\\课程x.txt
+      → 输出到 D:\\视频\\课程文件夹\\子文件夹B\\Text\\课程y.txt
 
-  强制指定输出目录 (不使用自动 Second 目录):
+  强制指定输出目录 (不使用自动 Text 目录):
       python faster_whisper_en_aggressive.py "D:\\视频\\课程1.mp4" -o "D:\\字幕"
       → 输出到 D:\\字幕\\课程1.txt
         """
@@ -230,7 +230,7 @@ def main():
     parser.add_argument('input', help='输入视频文件或文件夹路径')
     parser.add_argument(
         '-o', '--output', default='.',
-        help='强制指定输出文件夹路径 (默认: 在视频所在目录自动创建 Second 文件夹)'
+        help='强制指定输出文件夹路径 (默认: 在视频所在目录自动创建 Text 文件夹)'
     )
     args = parser.parse_args()
 
@@ -309,7 +309,7 @@ def main():
     if forced_output_dir:
         print(f"📂 强制输出目录: {forced_output_dir.absolute()}")
     else:
-        print(f"📂 输出位置: 各视频所在目录的 Second 子文件夹中")
+        print(f"📂 输出位置: 各视频所在目录的 Text 子文件夹中")
     print(f"{'='*60}")
 
 
