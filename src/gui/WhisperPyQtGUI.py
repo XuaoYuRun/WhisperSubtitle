@@ -311,6 +311,12 @@ class WhisperMinimalGUI(QMainWindow):
         self.file_edit.setPlaceholderText("输入文件或文件夹路径...")
         self.file_edit.setStyleSheet(self._input_style())
         left_layout.addWidget(self.file_edit)
+        left_layout.addSpacing(12)
+        self.file_btn = QPushButton("浏览")
+        self.file_btn.setStyleSheet(self._ghost_btn_style())
+        self.file_btn.clicked.connect(self._browse_file)
+        self.file_btn.setMaximumWidth(80)
+        left_layout.addWidget(self.file_btn, alignment=Qt.AlignLeft)
         left_layout.addSpacing(28)
 
         # 输出目录
@@ -826,16 +832,22 @@ class WhisperMinimalGUI(QMainWindow):
         if path:
             self.file_edit.setText(path)
 
-    def _browse_output(self):
+    def _browse_file(self):
         import tkinter as tk
         from tkinter import filedialog
         root = tk.Tk()
         root.withdraw()
         root.attributes('-topmost', True)
-        path = filedialog.askdirectory(title="选择输出目录")
+        path = filedialog.askopenfilename(
+            title="选择视频或音频文件",
+            filetypes=[
+                ("视频/音频文件", "*.mp4;*.mkv;*.avi;*.mov;*.wmv;*.flv;*.webm;*.m4v;*.mpeg;*.mpg;*.mp3;*.wav;*.m4a;*.aac;*.ogg"),
+                ("所有文件", "*.*")
+            ]
+        )
         root.destroy()
         if path:
-            self.out_edit.setText(path)
+            self.file_edit.setText(path)
 
     def _copy_log(self):
         text = self.log_edit.toPlainText()
