@@ -113,21 +113,12 @@ def merge_segments_to_sentences(segments):
 
 
 def txt_to_md(txt_path: Path, md_path: Path, video_path: Path):
-    """将纯文本 TXT 转换为 Markdown 格式"""
+    """将纯文本 TXT 复制为 Markdown 格式（内容完全一致，仅扩展名不同）"""
     with open(txt_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    md_content = (
-        f"# {video_path.stem}\n\n"
-        f"> 来源: {video_path.name}\n\n"
-        f"---\n\n"
-        f"{content}\n\n"
-        f"---\n\n"
-        f"*由 Whisper 语音转录自动生成*"
-    )
-    
     with open(md_path, 'w', encoding='utf-8') as f:
-        f.write(md_content)
+        f.write(content)
 
 
 def process_video(video_path: Path, model: WhisperModel, forced_output_dir: Path = None, desktop: bool = False) -> Path:
