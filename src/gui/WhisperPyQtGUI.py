@@ -38,6 +38,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
 VENV_PYTHON = PROJECT_ROOT / "whisper_env" / "Scripts" / "python.exe"
 SCRIPT_V1 = PROJECT_ROOT / "src" / "core" / "WhisperProject.py"
 SCRIPT_V2 = PROJECT_ROOT / "src" / "core" / "WhisperProject2.py"
+SCRIPT_CN = PROJECT_ROOT / "src" / "core" / "WhisperProjectCN.py"
 ICON_PATH = PROJECT_ROOT / "assets" / "logo.png"
 
 
@@ -49,6 +50,8 @@ def check_env():
         errors.append(f"标准版脚本未找到:\n{SCRIPT_V1}")
     if not SCRIPT_V2.exists():
         errors.append(f"防幻觉版脚本未找到:\n{SCRIPT_V2}")
+    if not SCRIPT_CN.exists():
+        errors.append(f"中文版脚本未找到:\n{SCRIPT_CN}")
     return errors
 
 
@@ -352,6 +355,24 @@ class WhisperMinimalGUI(QMainWindow):
         out_btn_row.addWidget(self.out_clear_btn)
         out_btn_row.addStretch()
         left_layout.addLayout(out_btn_row)
+        left_layout.addSpacing(28)
+
+        # 语言选择
+        sec_lang_label = QLabel("语言")
+        sec_lang_label.setStyleSheet("color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;")
+        left_layout.addWidget(sec_lang_label)
+        left_layout.addSpacing(8)
+        lang_row = QHBoxLayout()
+        lang_row.setSpacing(16)
+        self.cn_radio = QRadioButton("中文")
+        self.cn_radio.setStyleSheet(self._radio_style())
+        self.cn_radio.setChecked(True)
+        self.en_radio = QRadioButton("英文")
+        self.en_radio.setStyleSheet(self._radio_style())
+        lang_row.addWidget(self.cn_radio)
+        lang_row.addWidget(self.en_radio)
+        lang_row.addStretch()
+        left_layout.addLayout(lang_row)
         left_layout.addSpacing(28)
 
         # 版本
@@ -1055,7 +1076,11 @@ class WhisperMinimalGUI(QMainWindow):
         if not Path(input_p).exists():
             QMessageBox.critical(self, "错误", f"路径不存在:\n{input_p}")
             return
-        script = SCRIPT_V1 if self.version == "v1" else SCRIPT_V2
+        # 根据语言和版本选择脚本
+        if self.cn_radio.isChecked():
+            script = SCRIPT_CN
+        else:
+            script = SCRIPT_V1 if self.version == "v1" else SCRIPT_V2
         output_p = self.out_edit.text().strip()
         cmd = [str(VENV_PYTHON), str(script), input_p]
         if output_p:
@@ -1063,7 +1088,7 @@ class WhisperMinimalGUI(QMainWindow):
         if self.desktop_cb.isChecked():
             cmd.append("--desktop")
         self._append_log("=" * 50, "#2980b9")
-        self._append_log(f"▶ 启动转录 | 版本: {self.version}", "#2980b9")
+        self._append_log(f"▶ 启动转录 | 语言: {'中文' if self.cn_radio.isChecked() else '英文'} | 版本: {self.version}", "#2980b9")
         self._append_log(f"{' '.join(cmd)}", "#2980b9")
         self._append_log("=" * 50, "#2980b9")
         self.is_running = True
