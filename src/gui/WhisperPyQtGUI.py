@@ -184,6 +184,7 @@ class WhisperMinimalGUI(QMainWindow):
         self._build_ui()
         self._enable_win11_rounded_corners()
         self._check_startup()
+        self._update_params()
 
     # ==================== 进程设置 ====================
     def _setup_process(self):
@@ -436,7 +437,7 @@ class WhisperMinimalGUI(QMainWindow):
         center_header = QHBoxLayout()
         center_header.setSpacing(0)
         # 页面选择按钮（带圆角边框）
-        self.page_selector = QPushButton("队列")
+        self.page_selector = QPushButton("参数")
         self.page_selector.setStyleSheet(
             "QPushButton {"
             "  background-color: #f1f3f5;"
@@ -476,21 +477,11 @@ class WhisperMinimalGUI(QMainWindow):
             "  color: #1a1a1a;"
             "}"
         )
-        self.page_menu.addAction("队列", lambda: self._switch_page(0))
+        self.page_menu.addAction("参数", lambda: self._switch_page(0))
         self.page_menu.addAction("监视", lambda: self._switch_page(1))
         self.page_selector.setMenu(self.page_menu)
         center_header.addWidget(self.page_selector)
         center_header.addStretch()
-        self.center_action_btn = QPushButton("添加")
-        self.center_action_btn.setStyleSheet("QPushButton { background: transparent; color: #adb5bd; border: none; padding: 4px 8px; } QPushButton:hover { color: #495057; }")
-        self.center_action_btn.setCursor(Qt.PointingHandCursor)
-        self.center_action_btn.clicked.connect(self._add_file_to_queue)
-        center_header.addWidget(self.center_action_btn)
-        center_header.addSpacing(8)
-        self.clear_queue_btn = QPushButton("清空")
-        self.clear_queue_btn.setStyleSheet("QPushButton { background: transparent; color: #adb5bd; border: none; padding: 4px 8px; } QPushButton:hover { color: #495057; }")
-        self.clear_queue_btn.clicked.connect(self._clear_queue)
-        center_header.addWidget(self.clear_queue_btn)
         center_layout.addLayout(center_header)
         center_layout.addSpacing(12)
 
@@ -498,42 +489,28 @@ class WhisperMinimalGUI(QMainWindow):
         self.center_stack = QStackedWidget()
         self.center_stack.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # ===== 第 1 页：文件队列 =====
-        queue_page = QWidget()
-        queue_page_layout = QVBoxLayout(queue_page)
-        queue_page_layout.setContentsMargins(0, 0, 0, 0)
-        queue_page_layout.setSpacing(0)
-        self.queue_list = QListWidget()
-        self.queue_list.setStyleSheet(
-            "QListWidget {"
+        # ===== 第 1 页：AI 参数 =====
+        param_page = QWidget()
+        param_page_layout = QVBoxLayout(param_page)
+        param_page_layout.setContentsMargins(0, 0, 0, 0)
+        param_page_layout.setSpacing(0)
+        self.param_edit = QPlainTextEdit()
+        self.param_edit.setStyleSheet(
+            "QPlainTextEdit {"
             "  background: #f8f9fa;"
             "  border: 1px solid #e9ecef;"
-            "  outline: none;"
-            "}"
-            "QListWidget::item {"
-            "  padding: 10px 12px;"
-            "  border-radius: 8px;"
+            "  border-radius: 12px;"
+            "  padding: 12px;"
             "  color: #495057;"
-            "}"
-            "QListWidget::item:selected {"
-            "  background: #e9ecef;"
-            "  color: #1a1a1a;"
-            "}"
-            "QListWidget::item:hover {"
-            "  background: #f1f3f5;"
+            "  font-family: 'LXGW WenKai', 'Consolas', monospace;"
+            "  font-size: 11px;"
+            "  line-height: 1.6;"
             "}"
         )
-        self.queue_list.setWordWrap(True)
-        self.queue_list.setSpacing(4)
-        self.queue_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        queue_page_layout.addWidget(self.queue_list)
-        queue_page_layout.addSpacing(8)
-        self.queue_status = QLabel("共 0 个文件")
-        self.queue_status.setStyleSheet("color: #adb5bd;")
-        self.queue_status.setMinimumHeight(34)
-        self.queue_status.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        queue_page_layout.addWidget(self.queue_status)
-        self.center_stack.addWidget(queue_page)
+        self.param_edit.setReadOnly(True)
+        self.param_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        param_page_layout.addWidget(self.param_edit)
+        self.center_stack.addWidget(param_page)
 
         # ===== 第 2 页：性能监控 =====
         perf_page = QWidget()
@@ -831,6 +808,7 @@ class WhisperMinimalGUI(QMainWindow):
             self.mode_desc.setText("英文标准版，输出到 Text 文件夹")
         elif self.mode_en_v2.isChecked():
             self.mode_desc.setText("英文防幻觉版，自动清理视频结尾的重复幻觉，输出到 Text 文件夹")
+        self._update_params()
 
     def _browse_input(self):
         import tkinter as tk
@@ -897,51 +875,19 @@ class WhisperMinimalGUI(QMainWindow):
         self.setGeometry(x, y, w, h)
 
     def _add_file_to_queue(self):
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        paths = filedialog.askopenfilenames(filetypes=[("视频/音频文件", "*.mp4;*.mkv;*.avi;*.mov;*.wmv;*.flv;*.webm;*.m4v;*.mpeg;*.mpg;*.mp3;*.wav;*.m4a;*.aac;*.ogg"), ("所有文件", "*.*")])
-        root.destroy()
-        for p in paths:
-            if p and p not in [self.queue_list.item(i).text() for i in range(self.queue_list.count())]:
-                self.queue_list.addItem(p)
-        self._update_queue_status()
+        pass
 
     def _add_folder_to_queue(self):
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        path = filedialog.askdirectory(title="选择包含视频/音频的文件夹")
-        root.destroy()
-        if path:
-            import glob
-            exts = ["*.mp4", "*.mkv", "*.avi", "*.mov", "*.wmv", "*.flv", "*.webm", "*.m4v", "*.mpeg", "*.mpg", "*.mp3", "*.wav", "*.m4a", "*.aac", "*.ogg"]
-            added = 0
-            for ext in exts:
-                for f in glob.glob(os.path.join(path, ext)):
-                    if f not in [self.queue_list.item(i).text() for i in range(self.queue_list.count())]:
-                        self.queue_list.addItem(f)
-                        added += 1
-            if added == 0:
-                self._append_log(f"文件夹中未找到媒体文件: {path}", "#e67e22")
-            self._update_queue_status()
+        pass
 
     def _remove_selected(self):
-        for item in self.queue_list.selectedItems():
-            self.queue_list.takeItem(self.queue_list.row(item))
-        self._update_queue_status()
+        pass
 
     def _clear_queue(self):
-        self.queue_list.clear()
-        self._update_queue_status()
+        pass
 
     def _update_queue_status(self):
-        count = self.queue_list.count()
-        self.queue_status.setText(f"共 {count} 个文件")
+        pass
 
     def _check_startup(self):
         errors = check_env()
@@ -955,6 +901,79 @@ class WhisperMinimalGUI(QMainWindow):
             self._append_log(f"Python: {VENV_PYTHON}")
             self._append_log(f"标准版: {SCRIPT_V1}")
             self._append_log(f"防幻觉版: {SCRIPT_V2}")
+
+    def _update_params(self):
+        """根据当前处理模式显示对应的 AI 参数"""
+        if self.mode_cn.isChecked():
+            text = (
+                "【中文转录】核心参数\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "language                = zh\n"
+                "task                    = transcribe\n"
+                "beam_size               = 5\n"
+                "best_of                 = 5\n"
+                "patience                = 1.5\n"
+                "length_penalty          = 1.0\n"
+                "temperature             = 0.0\n"
+                "compression_ratio_threshold  = 2.4\n"
+                "log_prob_threshold      = -1.0\n"
+                "no_speech_threshold     = 0.6\n"
+                "condition_on_previous_text   = True\n"
+                "word_timestamps         = False\n"
+                "vad_filter              = True\n"
+                "min_silence_duration_ms    = 300\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "提示：中文标点自动转换，句子以\n"
+                "。！？结尾，上下文连贯开启。"
+            )
+        elif self.mode_en_v1.isChecked():
+            text = (
+                "【英文标准版】核心参数\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "language                = en\n"
+                "task                    = transcribe\n"
+                "beam_size               = 5\n"
+                "best_of                 = 5\n"
+                "patience                = 1.5\n"
+                "length_penalty          = 1.0\n"
+                "temperature             = 0.0\n"
+                "compression_ratio_threshold  = 2.4\n"
+                "log_prob_threshold      = -1.0\n"
+                "no_speech_threshold     = 0.6\n"
+                "condition_on_previous_text   = True\n"
+                "word_timestamps         = False\n"
+                "vad_filter              = True\n"
+                "min_silence_duration_ms    = 300\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "提示：上下文依赖开启，连贯性最佳；\n"
+                "适合清晰、标准发音的英文内容。"
+            )
+        else:
+            text = (
+                "【英文防幻觉版】核心参数\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "language                = en\n"
+                "task                    = transcribe\n"
+                "beam_size               = 5\n"
+                "best_of                 = 5\n"
+                "patience                = 1.5\n"
+                "length_penalty          = 1.0\n"
+                "temperature             = 0.0\n"
+                "compression_ratio_threshold  = 2.0  ← 更严格\n"
+                "log_prob_threshold      = -1.5  ← 更严格\n"
+                "no_speech_threshold     = 0.8  ← 更高\n"
+                "condition_on_previous_text   = False  ← 关闭\n"
+                "word_timestamps         = False\n"
+                "vad_filter              = True\n"
+                "min_silence_duration_ms    = 500  ← 更长\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "后处理：clean_repetition()\n"
+                "  • 截断末尾连续4句+相同内容\n"
+                "  • 全文相邻重复句仅保留一句\n\n"
+                "提示：上下文关闭，防重复传染；\n"
+                "适合有结尾重复幻觉问题的视频。"
+            )
+        self.param_edit.setPlainText(text)
 
     # ==================== 日志系统 ====================
     def _detect_color(self, text):
@@ -994,23 +1013,19 @@ class WhisperMinimalGUI(QMainWindow):
 
     # ==================== 转录控制 ====================
     def _switch_page(self, index):
-        """切换到中间栏指定页面（0=队列, 1=监视）"""
+        """切换到中间栏指定页面（0=参数, 1=监视）"""
         if index == 0:
             self.center_stack.setCurrentIndex(0)
-            self.page_selector.setText("队列")
-            self.center_action_btn.setVisible(True)
-            self.clear_queue_btn.setVisible(True)
+            self.page_selector.setText("参数")
             self._perf_timer.stop()
         elif index == 1:
             self.center_stack.setCurrentIndex(1)
             self.page_selector.setText("监视")
-            self.center_action_btn.setVisible(False)
-            self.clear_queue_btn.setVisible(False)
             self._perf_timer.start()
             self._update_perf()
 
     def _toggle_center_page(self):
-        """手动切换中间栏页面（队列/监视）"""
+        """手动切换中间栏页面（参数/监视）"""
         if self.center_stack.currentIndex() == 0:
             self._switch_page(1)
         else:
@@ -1049,14 +1064,8 @@ class WhisperMinimalGUI(QMainWindow):
     def _start(self):
         input_p = self.file_edit.text().strip()
         if not input_p:
-            if self.queue_list.count() > 0:
-                item = self.queue_list.takeItem(0)
-                input_p = item.text()
-                self.file_edit.setText(input_p)
-                self._update_queue_status()
-            else:
-                QMessageBox.warning(self, "提示", "请先选择要处理的视频/音频文件或添加文件到队列")
-                return
+            QMessageBox.warning(self, "提示", "请先选择要处理的视频/音频文件")
+            return
         if not Path(input_p).exists():
             QMessageBox.critical(self, "错误", f"路径不存在:\n{input_p}")
             return
@@ -1116,11 +1125,6 @@ class WhisperMinimalGUI(QMainWindow):
         self._perf_timer.stop()
         if self.center_stack.currentIndex() == 1:
             self._toggle_center_page()
-        if not self._user_stopped and exit_code == 0 and self.queue_list.count() > 0:
-            next_item = self.queue_list.takeItem(0)
-            self.file_edit.setText(next_item.text())
-            self._update_queue_status()
-            self._start()
 
     def _reset_ui(self):
         self.is_running = False
