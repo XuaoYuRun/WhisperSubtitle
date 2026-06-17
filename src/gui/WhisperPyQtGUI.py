@@ -832,6 +832,17 @@ class WhisperMinimalGUI(QMainWindow):
         if path:
             self.file_edit.setText(path)
 
+    def _browse_output(self):
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        path = filedialog.askdirectory(title="选择输出目录")
+        root.destroy()
+        if path:
+            self.out_edit.setText(path)
+
     def _browse_file(self):
         import tkinter as tk
         from tkinter import filedialog
